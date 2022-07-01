@@ -1,9 +1,6 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "../builtins.h"
 
-static int	found_export_name_with_value(char **exp, char *to_find)
+int	found_export_name_with_value(char **exp, char *to_find)
 {
 	int	i;
 	int	j;
@@ -30,25 +27,28 @@ static int	found_export_name_with_value(char **exp, char *to_find)
 	return (-1);
 }
 
-static char	**cpy_env_extend(char **env, char **to_export)
+char	**cpy_env_extend(char **env, char **to_export)
 {
 	int		i;
 	int		j;
 	char	**cpy_env_extended;
 
 	i = 0;
-	while (to_export[i])
-		i++;
+	if (to_export)
+		while (to_export[i])
+			i++;
 	j = 0;
 	while (env[j])
 		j++;
 	cpy_env_extended = malloc(sizeof(char *) * (i + j + 1));
 	if (!cpy_env_extended)
-		return (NULL);
+		return (printf("\e[1;31Copy failed\n\e[0m"), NULL);
 	i = 0;
 	while (env[i])
 	{
-		cpy_env_extended[i] = strdup(env[i]);
+		cpy_env_extended[i] = ft_strdup(env[i]);
+		if (!cpy_env_extended[i])
+			return (free_2d_tab(&cpy_env_extended), NULL);
 		i++;
 	}
 	cpy_env_extended[i] = 0;
@@ -57,29 +57,27 @@ static char	**cpy_env_extend(char **env, char **to_export)
 
 char	*ft_strdup_export(char *src, int i, int j)
 {
-	int		len;
 	char	*str;
 
-	len = 0;
-	while (src[len])
-		len++;
-	str = malloc(sizeof(*str) * (len + 3));
+	str = malloc(ft_strlen(src) + 3);
 	if (!str)
-		return (NULL);
-	while (i < len)
+		return (printf("\e[1;31Copy failed\n\e[0m"), NULL);
+	while (src[i])
 	{
-		if (src[i] == '=' && src[i + 1])
-		{
-			i++;
-			str[j++] = '=';
-			str[j++] = '"';
-		}
-		if (src[i] == '=' && !src[i + 1])
-			str[j++] = '"';
+		if (src[i] == '=')
+			break ;
 		str[j++] = src[i++];
-		if (i == len && i != j)
-			str[j] = '"';
 	}
-	str[j + 1] = '\0';
+	if (src[i] == '=')
+	{
+		str[j++] = '=';
+		str[j++] = '"';
+		i++;
+	}
+	while (src[i])
+		str[j++] = src[i++];
+	if (i != j)
+		str[j++] = '"';
+	str[j] = '\0';
 	return (str);
 }

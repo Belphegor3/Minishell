@@ -1,5 +1,5 @@
 CC		= cc
-FLAGS	= -Wall -Werror -Wextra
+FLAGS	= -Wall -Werror -Wextra -g #-fsanitize=address
 SRCS	= ft_atoi.c ft_bzero.c ft_calloc.c ft_isalnum.c ft_isalpha.c      \
 		  ft_isascii.c ft_isdigit.c ft_isprint.c ft_memchr.c ft_memcmp.c  \
 		  ft_memcpy.c ft_memmove.c ft_memset.c ft_strchr.c ft_strdup.c    \
@@ -9,7 +9,8 @@ SRCS	= ft_atoi.c ft_bzero.c ft_calloc.c ft_isalnum.c ft_isalpha.c      \
 		  ft_putchar_fd.c ft_putstr_fd.c ft_putendl_fd.c ft_putnbr_fd.c \
 		  ft_lstnew.c ft_lstadd_front.c ft_lstsize.c ft_lstlast.c \
 		  ft_lstadd_back.c ft_lstdelone.c ft_lstclear.c ft_lstiter.c \
-		  ft_lstmap.c
+		  ft_lstmap.c ft_veccreate.c ft_vecdestroy.c ft_vecset.c ft_vecadd.c \
+		  ft_vecget.c ft_vecremove.c ft_vecinsert.c ft_strcmp.c
 OBJS	= $(SRCS:.c=.o)
 
 TESTDIR	= tests
@@ -25,7 +26,10 @@ TESTS	= ft_atoi_tests.c ft_isdigit_tests.c ft_memset.c ft_strncmp_tests.c \
 		ft_putstr_fd_tests.c ft_putendl_fd_tests.c ft_putnbr_fd_tests.c \
 		ft_lstnew_tests.c ft_lstadd_front_tests.c ft_lstsize_tests.c \
 		ft_lstlast_tests.c ft_lstadd_back_tests.c ft_lstdelone_tests.c \
-		ft_lstclear_tests.c ft_lstiter_tests.c ft_lstmap_tests.c
+		ft_lstclear_tests.c ft_lstiter_tests.c ft_lstmap_tests.c \
+		ft_veccreate_tests.c ft_vecdestroy_tests.c ft_vecset_tests.c \
+		ft_vecadd_tests.c ft_vecget_tests.c ft_vecremove_tests.c \
+		ft_vecinsert_tests.c
 TESTOBJS	= $(patsubst $(TESTDIR)/%.c, $(TESTDIR)/obj/%.o, \
 			$(addprefix $(TESTDIR)/, $(TESTS)))
 
@@ -52,13 +56,13 @@ $(LIBTESTS):	$(NAME) $(TESTDIR)/obj $(TESTOBJS)
 tests_run:	$(LIBTESTS)
 	@./$(LIBTESTS)
 
-clean:
-	rm -rf $(OBJS)
-	rm -rf *.gcda *.gcno
-
 tclean:
 	rm -rf $(TESTDIR)/obj
 	rm -f $(LIBTESTS)
+
+clean: tclean
+	rm -rf $(OBJS)
+	rm -rf *.gcda *.gcno
 
 fclean:	clean tclean
 	rm -f $(NAME)

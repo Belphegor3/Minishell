@@ -1,165 +1,11 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-static int	found_name(char **env, char *to_find)
-{
-	int	i;
-	int	j;
-	int	k;
-
-	i = 0;
-	while (env[i])
-	{
-		j = 0;
-		k = 0;
-		if (env[i][j] == to_find[k])
-		{
-			while (env[i][j] == to_find[k] && env[i][j] != '=')
-			{
-				j++;
-				k++;
-			}
-			if (env[i][j] == '=' && !to_find[k])
-				return (i);
-		}
-		i++;
-	}
-	return (-1);
-}
-
-static int	found_name_with_value(char **exp, char *to_find)
-{
-	int	i;
-	int	j;
-	int	k;
-
-	i = 0;
-	while (exp[i])
-	{
-		j = 0;
-		k = 0;
-		if (exp[i][j] == to_find[k])
-		{
-			while (exp[i][j] && exp[i][j] == to_find[k] && to_find[k] != '=')
-			{
-				j++;
-				k++;
-			}
-			if ((exp[i][j] == '=' && to_find[k] == '=') || (!exp[i][j] && to_find[k] == '='))
-				return (i);
-		}
-		i++;
-	}
-	return (-1);
-}
-
-//	libft
-/*****************************************************************************************************************************************/
-
-static char	*ft_strdup(char *src)
-{
-	int		i;
-	int		j;
-	int		len;
-	char	*str;
-
-	len = 0;
-	while (src[len])
-		len++;
-	str = malloc(sizeof(*str) * (len + 1));
-	if (!str)
-		return (NULL);
-	i = 0;
-	j = 0;
-	while (i < len)
-	{
-		str[j++] = src[i++];
-	}
-	str[j] = '\0';
-	return (str);
-}
-
-static void	ft_putchar_fd(char c, int fd)
-{
-	write(fd, &c, 1);
-}
-
-static size_t	ft_strlen(const char *s)
-{
-	int	i;
-
-	i = 0;
-	while (s[i])
-		i++;
-	return (i);
-}
-
-static void	ft_putstr_fd(char *s, int fd)
-{
-	write(fd, s, ft_strlen(s));
-}
-
-static void	ft_putendl_fd(char *s, int fd)
-{
-	ft_putstr_fd(s, fd);
-	ft_putchar_fd('\n', fd);
-}
-
-//	libft
-/*****************************************************************************************************************************************/
-
-static char	**cpy_env_extend(char **env, char **to_export)
-{
-	int		i;
-	int		j;
-	char	**cpy_env_ex;
-
-	i = 0;
-	while (to_export[i])
-		i++;
-	j = 0;
-	while (env[j])
-		j++;
-	cpy_env_ex = malloc(sizeof(char *) * (i + j + 1));
-	if (!cpy_env_ex)
-		return (NULL);
-	i = 0;
-	while (env[i])
-	{
-		cpy_env_ex[i] = strdup(env[i]);
-		i++; 
-	}
-	cpy_env_ex[i] = 0;
-	return (cpy_env_ex);
-}
-
-static int	len_env(char **env)
-{
-	int	i;
-
-	i = 0;
-	while (env[i])
-		i++;
-	return (i);
-}
-
-void	display(char **display)
-{
-	int	i;
-
-	i = 0;
-	while (display[i])
-		ft_putendl_fd(display[i++], 1);
-}
+#include "../builtins.h"
 
 static int	check_args(char **to_export, char **exp)
 {
 	int	j;
 	int	error_count;
 
-	if (!to_export)
+	if (to_export[0] && !to_export[1])
 		return (display(exp), EXIT_FAILURE);
 	error_count = 0;
 	j = 1;
@@ -169,9 +15,9 @@ static int	check_args(char **to_export, char **exp)
 			(to_export[j][0] >= 'A' && to_export[j][0] <= 'Z') ||
 				to_export[j][0] == '_'))
 		{
-			ft_putstr_fd("minishell: export: '", 1);
-			ft_putstr_fd(to_export[j], 1);
-			ft_putendl_fd("': not a valid identifier", 1);
+			ft_putstr_fd("minishell: export: '", 2);
+			ft_putstr_fd(to_export[j], 2);
+			ft_putendl_fd("': not a valid identifier", 2);
 			error_count++;
 		}
 		j++;
@@ -181,60 +27,56 @@ static int	check_args(char **to_export, char **exp)
 	return (EXIT_SUCCESS);
 }
 
-char	*ft_strdup_export(char *src, int i, int j)
+char	**updated_to_export(char **to_export, int index)
 {
-	int		len;
-	char	*str;
+	char	**new_to_export;
+	int		i;
 
-	len = 0;
-	while (src[len])
-		len++;
-	str = malloc(sizeof(*str) * (len + 3));
-	if (!str)
-		return (NULL);
-	while (i < len)
-	{
-		if (src[i] == '=' && src[i + 1])
-		{
-			i++;
-			str[j++] = '=';
-			str[j++] = '"';
-		}
-		if (src[i] == '=' && !src[i + 1])
-			str[j++] = '"';
-		str[j++] = src[i++];
-		if (i == len && i != j)
-			str[j] = '"';
-	}
-	str[j + 1] = '\0';
-	return (str);
+	new_to_export = malloc(sizeof(char *) * (len_env(to_export) + 1));
+	new_to_export[0] = to_export[0];
+	i = 1;
+	while (index < len_env(to_export))
+
+
 }
 
-int	execute_builtin_export(char ***env, char ***exp, char **to_export)
+int	execute_builtin_export(t_tab *tabs, char **to_export)
 {
 	int		index[4];
 	char	**cpy_env_ex;
 	char	**cpy_exp_ex;
 
-	if (check_args(to_export, *exp))
+	if (check_args(to_export, tabs->exp))
 		return (EXIT_FAILURE);
-	index[0] = len_env(*env);
-	index[3] = len_env(*exp);
-	cpy_env_ex = cpy_env_extend(*env, to_export);
-	cpy_exp_ex = cpy_env_extend(*exp, to_export);/* free cpy_env si cpy_exp fail */
+	index[0] = len_env(tabs->env);
+	index[3] = len_env(tabs->exp);
+	cpy_env_ex = cpy_env_extend(tabs->env, to_export);
+	cpy_exp_ex = cpy_env_extend(tabs->exp, to_export);
+	if (!cpy_env_ex || !cpy_exp_ex)
+		return (EXIT_FAILURE);
 	index[1] = 1;
 	while (to_export[index[1]])
 	{
 		index[2] = 0;
-		if ((to_export[index[1]][0] == '_' && !to_export[index[1]][1]) || (to_export[index[1]][0] == '_' && to_export[index[1]][1] == '=') || found_name(*exp, to_export[index[1]]) != -1)
+		if ((to_export[index[1]][0] == '_' && !to_export[index[1]][1]) || (to_export[index[1]][0] == '_' && to_export[index[1]][1] == '=') || found_name(tabs->exp, to_export[index[1]]) != -1)
 		{
 			index[1]++;
 			continue ;
 		}
-		else if (found_name_with_value(*exp, to_export[index[1]]) != -1)
+		else if (found_export_name_with_value(tabs->exp, to_export[index[1]]) != -1)
 		{
-			if (!execute_builtin_unset(env, exp, *to_export[index[1]]))						/*	limite fonction norm ta mere	*/
-				return (EXIT_FAILURE);
+			printf("ca passe ou bien\n");
+			execute_builtin_unset(tabs, &to_export[index[1]]);
+			execute_builtin_export(tabs, to_export);
+			// free_2d_tab(&cpy_env_ex);
+			// free_2d_tab(&cpy_exp_ex);
+			// cpy_env_ex = NULL;
+			// cpy_exp_ex = NULL;
+			// cpy_env_ex = cpy_env_extend(tabs->env, to_export);
+			// cpy_exp_ex = cpy_env_extend(tabs->exp, to_export);
+			// index[0] = len_env(tabs->env);
+			// index[3] = len_env(tabs->exp);
+			// printf("ca passe ou bien\n");
 			cpy_exp_ex[index[3]++] = ft_strdup_export(to_export[index[1]], 0, 0);
 			cpy_env_ex[index[0]++] = ft_strdup(to_export[index[1]]);
 		}
@@ -250,40 +92,22 @@ int	execute_builtin_export(char ***env, char ***exp, char **to_export)
 				cpy_env_ex[index[0]++] = ft_strdup(to_export[index[1]]);
 			cpy_exp_ex[index[3]++] = ft_strdup_export(to_export[index[1]], 0, 0);
 		}
+		cpy_env_ex[index[0]] = 0;
+		cpy_exp_ex[index[3]] = 0;
 		index[1]++;
 	}
-	*env = cpy_env_ex;
-	*exp = cpy_exp_ex;
+	tabs->env = cpy_env_ex;
+	tabs->exp = cpy_exp_ex;
+
 	return (EXIT_SUCCESS);
 }
 
-/* fonctionne mais il ne faut rien renvoyer juste changer l adresse des valeurs de env et export	*/
-/* le prototype doit etre: void	execute_builtin_export(char **env, char **exp, char **to_export)	*/
-/* reste a proteger, enlever les leaks aussi et mettre a la norme 									*/ 
-
 // int	main(int ac, char **ag, char **env)
 // {
-// 	// char	**lala;
-// 	// char	**result;
-// 	char	**ex = malloc(sizeof(char *));
-// 	*ex = NULL;
+// 	int	y;
 
-// 	// lala = env;
-// 	(void)ac;
-// 	execute_builtin_export(&env, &ex, ag);
-// 	// for (int j = 0; lala[j] != NULL; j++)
-// 	// 	printf("%s\n", lala[j]);
-// 	// printf("\n\n\n\n\n\n");
-// 	for (int i = 1; ex[i] != NULL; i++)
-// 		printf("%s\n", ex[i]);
-// 	// for (int i = 0; result[i] != NULL; i++)
-// 	// 	printf("%s\n", result[i]);
-// 	return (0);
-// }
-
-// int	main(int ac, char **ag, char **env)
-// {
-// 	if (!execute_builtin_export(&env, &ag, ag))
+// 	y = 0;
+// 	if (!execute_builtin_export(&ag, &env, ag))
 // 	{	
 // 		for (int i = 0; env[i] != NULL; i++)
 // 			printf("%s\n", env[i]);

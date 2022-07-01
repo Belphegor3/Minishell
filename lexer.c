@@ -1,76 +1,54 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   lexer.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: jfoucher <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/06/11 10:09:04 by jfoucher          #+#    #+#             */
+/*   Updated: 2022/06/11 10:09:06 by jfoucher         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "minishell.h"
 #include "lexer.h"
-
-t_tok_list	*ft_toklstnew(t_token *token)
-{
-	return ((t_tok_list*)ft_lstnew((void*)token));
-}
-
-void	ft_toklstadd_back(t_tok_list **lst, t_tok_list *new)
-{
-	ft_lstadd_back((t_list**)lst, (t_list*)new);
-}
-void	ft_toklst_clear(t_tok_list **lst, void (*del)(void*))
-{
-	ft_lstclear((t_list**)lst, del);
-}
 
 static t_token	*take_word(char **iter)
 {
 	t_token		*token;
 	char		special_characters[16];
 
-	ft_strlcpy(special_characters, "|&;<>()$`\\\"' \t\n", 16);
-	token = malloc(sizeof(t_token));
-	assert(token != NULL);
-	token->type = WORD;
-	token->slice.start = *iter;
-	token->slice.length = 1; 
-	while ((*iter)[1] && ft_strchr(special_characters, (*iter)[1]) == NULL)
+	ft_strlcpy(special_characters, "|<> \t\n", 16);
+	token = create_token(WORD);
+	if (!token)
+		return (NULL);
+	while ((*iter) && (*iter)[0]
+			&& ft_strchr(special_characters, (*iter)[0]) == NULL)
 	{
-		token->slice.length++;
-		(*iter)++;
+		if ((*iter)[0] == '\'')
+			take_single_quote(token, iter);
+		else if ((*iter)[0] == '\"')
+			take_double_quote(token, iter);
+		else
+		{
+			ft_vecadd(token->value, *iter);
+			(*iter)++;
+		}
 	}
-	if (*iter)
-		(*iter)++;
+	ft_vecadd(token->value, "\0");
 	return (token);
 }
 
-static t_token	*take_single_quote(char **iter)
+static t_token	*take_pipe(char **iter)
 {
 	t_token	*token;
 
-	token = malloc(sizeof(t_token));
-	assert(token != NULL);
-	token->type = QUOTE;
+	token = create_token(PIPE);
+	if (!token)
+		return (NULL);
+	ft_vecadd(token->value, *iter);
+	ft_vecadd(token->value, "\0");
 	(*iter)++;
-	token->slice.start = *iter;
-	token->slice.length = 1;
-	while ((*iter)[1] != '\'')
-	{
-		token->slice.length++;
-		(*iter)++;
-	}
-	(*iter) += 2;
-	return (token);
-}
-
-static t_token	*take_double_quote(char **iter)
-{
-	t_token	*token;
-
-	token = malloc(sizeof(t_token));
-	assert(token != NULL);
-	token->type = DQUOTE;
-	(*iter)++;
-	token->slice.start = *iter;
-	token->slice.length = 1;
-	while ((*iter)[1] != '\"')
-	{
-		token->slice.length++;
-		(*iter)++;
-	}
-	(*iter) += 2;
 	return (token);
 }
 
@@ -78,63 +56,23 @@ t_tok_list	*lexer(char *line)
 {
 	t_tok_list	*token_list;
 	char		*iter;
+	t_token		*token;
 
 	iter = line;
 	token_list = NULL;
 	while (*iter)
 	{
-		if (*iter == '\'')
-		{
-			ft_toklstadd_back(&token_list, ft_toklstnew(take_single_quote(&iter)));
-		}
-		else if (*iter == '\"')
-		{
-			ft_toklstadd_back(&token_list, ft_toklstnew(take_double_quote(&iter)));
-		}
-		else if (*iter == '|')
-		{
-			t_token *token = malloc(sizeof(t_token));
-			token->type = PIPE;
-			token->slice.start = iter;
-			token->slice.length = 1;
-			ft_toklstadd_back(&token_list, ft_toklstnew(token));
-			iter++;
-		}
-		else if (*iter == '>')
-		{
-			if (iter[1] == '>')
-			{
-				t_token *token = malloc(sizeof(t_token));
-				token->type = GREATGREAT;
-				token->slice.start = iter;
-				token->slice.length = 2;
-				ft_toklstadd_back(&token_list, ft_toklstnew(token));
-				iter += 2;
-			}
-			else
-			{
-				t_token *token = malloc(sizeof(t_token));
-				token->type = GREAT;
-				token->slice.start = iter;
-				token->slice.length = 1;
-				ft_toklstadd_back(&token_list, ft_toklstnew(token));
-				iter++;
-			}
-		}
-		else if (*iter == '<')
-		{
-			t_token *token = malloc(sizeof(t_token));
-			token->type = LESS;
-			token->slice.start = iter;
-			token->slice.length = 1;
-			ft_toklstadd_back(&token_list, ft_toklstnew(token));
-			iter++;
-		}
-		else if (*iter == ' ')
+		if (*iter == ' ' || *iter == '\t' || *iter == '\n')
 			iter++;
 		else
 		{
-			ft_toklstadd_back(&token_list, ft_toklstnew(take_word(&iter)));
+			if (*iter == '|')
+				token = take_pipe(&iter);
+			else if (*iter == '>' || *iter == '<')
+				token = take_redirection(&iter);
+			else
+				token = take_word(&iter);
+			ft_toklstadd_back(&token_list, ft_toklstnew(token));
 		}
 	}
 	return (token_list);

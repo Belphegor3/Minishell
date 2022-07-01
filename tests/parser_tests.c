@@ -5,11 +5,7 @@
 #include "../parser.h"
 #include "../lexer.h"
 
-void cr_assert_slice_equal_string(t_slice slice, char *str)
-{
-	cr_assert(strncmp(str, slice.start, slice.length) == 0
-			&& slice.length == strlen(str));
-}
+extern char **environ;
 
 static void	serialize_tree(t_syntax_node *tree, char buffer[], int *buffer_index)
 {
@@ -21,8 +17,8 @@ static void	serialize_tree(t_syntax_node *tree, char buffer[], int *buffer_index
 		(*buffer_index)++;
 		if (tree->token)
 		{
-			strncpy(buffer + *buffer_index, tree->token->slice.start, tree->token->slice.length);
-			(*buffer_index) += tree->token->slice.length;
+			ft_memcpy(buffer + *buffer_index, ft_vecget(*(tree->token->value), 0), tree->token->value->length);
+			(*buffer_index) += tree->token->value->length - 1;
 			buffer[*buffer_index] = ' ';
 			(*buffer_index)++;
 		}
@@ -47,12 +43,12 @@ static void cr_assert_tree(char *line, char *expected_serialized_tree)
 
 	buffer_index = 0;
 	tokens = lexer(line);
-	node = parser(tokens);
+	node = parser(tokens, environ);
 	serialize_tree(node, buffer, &buffer_index);
 	buffer[buffer_index - 1] = '\0';
 	cr_assert_str_eq(buffer, expected_serialized_tree);
 	delete_syntax_tree(node);
-	ft_toklst_clear(&tokens, free);
+	ft_toklst_clear(&tokens, NULL);
 }
 
 Test(tree, create_node)
@@ -92,22 +88,32 @@ Test(parser, multiple_words2)
 
 Test(parser, one_pipe)
 {
-	cr_assert_tree("ls -l | grep c", "0 1 2 4 ls N N 5 6 -l N N N N 0 1 2 4 grep N N 5 6 c N N N N N");
+	cr_assert_tree("ls -l | grep c", "0 | 1 2 4 ls N N 5 6 -l N N N N 0 1 2 4 grep N N 5 6 c N N N N N");
 }
 
 Test(parser, one_pipe2)
 {
-	cr_assert_tree("ls | grep c", "0 1 2 4 ls N N N N 0 1 2 4 grep N N 5 6 c N N N N N");
+	cr_assert_tree("ls | grep c", "0 | 1 2 4 ls N N N N 0 1 2 4 grep N N 5 6 c N N N N N");
+}
+
+Test(parser, one_pipe3)
+{
+	cr_assert_tree("ls | cat", "0 | 1 2 4 ls N N N N 0 1 2 4 cat N N N N N");
 }
 
 Test(parser, multiple_pipes)
 {
-	cr_assert_tree("ls -l | grep c | cat -e", "0 1 2 4 ls N N 5 6 -l N N N N 0 1 2 4 grep N N 5 6 c N N N N 0 1 2 4 cat N N 5 6 -e N N N N N");
+	cr_assert_tree("ls -l | grep c | cat -e", "0 | 1 2 4 ls N N 5 6 -l N N N N 0 | 1 2 4 grep N N 5 6 c N N N N 0 1 2 4 cat N N 5 6 -e N N N N N");
 }
 
 Test(parser, redirection_great)
 {
 	cr_assert_tree("cat Makefile > out.txt", "0 1 2 4 cat N N 5 6 Makefile N N N 3 > 7 out.txt N N N N");
+}
+
+Test(parser, redirection_great2)
+{
+	cr_assert_tree("cat > out.txt Makefile", "0 1 2 4 cat N N 5 6 Makefile N N N 3 > 7 out.txt N N N N");
 }
 
 Test(parser, redirection_less)
@@ -118,4 +124,19 @@ Test(parser, redirection_less)
 Test(parser, redirection_greatgreat)
 {
 	cr_assert_tree("cat Makefile >> out.txt", "0 1 2 4 cat N N 5 6 Makefile N N N 3 >> 7 out.txt N N N N");
+}
+
+Test(parser, single_quote1)
+{
+	cr_assert_tree("ls '-la'", "0 1 2 4 ls N N 5 6 -la N N N N N");
+}
+
+Test(parser, single_quote2)
+{
+	cr_assert_tree("l's'''", "0 1 2 4 ls N N N N N");
+}
+
+Test(parser, double_quotes1)
+{
+	cr_assert_tree("ls \"> out.txt\"", "0 1 2 4 ls N N 5 6 > out.txt N N N N N");
 }

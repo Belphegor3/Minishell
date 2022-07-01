@@ -1,3 +1,5 @@
+#include "../builtins.h"
+
 int	found_unset_name_without_value(char **exp, char *to_find)
 {
 	int	i;
@@ -24,15 +26,20 @@ int	found_unset_name_without_value(char **exp, char *to_find)
 	return (-1);
 }
 
-static char	**cpy_env_exp(char **env, char **cpy)
+char	**cpy_env_exp(char **env, char **cpy)
 {
 	int	i;
 
 	i = 0;
 	cpy = malloc(sizeof(char *) * (len_env(env) + 1));
+	if (!cpy)
+		return (printf("\e[1;31mCopy failed\e[0m"), NULL);
 	while (env[i])
 	{
 		cpy[i] = ft_strdup(env[i]);
+		if (!cpy[i])
+			return (free_2d_tab(&cpy),
+				printf("\e[1;31Copy failed\n\e[0m"), NULL);
 		i++;
 	}
 	cpy[i] = 0;
